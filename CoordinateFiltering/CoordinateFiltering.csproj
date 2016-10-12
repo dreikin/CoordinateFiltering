@@ -7,8 +7,8 @@
     <ProjectGuid>{50EF14A0-76C3-4EE7-B7A5-3C88550C5A38}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WengCoordinateFiltering</RootNamespace>
-    <AssemblyName>WengCoordinateFiltering</AssemblyName>
+    <RootNamespace>CoordinateFiltering</RootNamespace>
+    <AssemblyName>CoordinateFiltering</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
