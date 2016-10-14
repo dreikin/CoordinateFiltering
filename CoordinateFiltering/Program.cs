@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,27 +16,14 @@ namespace CoordinateFiltering
             IList<Customer> customers = GenerateCustomers(40000, randomSource);
             IList<Provider> providers = GenerateProviders(922000, randomSource);
 
-            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-            timer.Start();
-            foreach(var customer in customers)
-            {
-                IList<Provider> nearestNProviders = FindNearestNProviders(customer, providers, 200);
-            }
-            timer.Stop();
-            Console.WriteLine($"Elapsed time: {timer.Elapsed}");
+            // Add or remove comments in accordance with what you want to test.
+            //TestFindNearestNProvidersNaive(customers, providers);
+            TestFindNearestNProvidersNaiveParallel(customers, providers);
+            TestFindNearestNProvidersKdTree(customers, providers);
 
+            Console.ReadLine();
             return;
 
-        }
-
-        private static IList<Provider> FindNearestNProviders(Customer customer, IList<Provider> providers, int count)
-        {
-            IList<Provider> nearbyProviders = new List<Provider>(count * 2);
-
-            while (nearbyProviders.Count < count && nearbyProviders.Count < providers.Count)
-            {
-                throw new NotImplementedException("Create two lists of geohash boxes (old and new).  Add to list in concentric rings.  Subtract old list from new list to get new boxes to evaluate.");
-            }
         }
 
         private static IList<Customer> GenerateCustomers(int count, Random randomSource)
@@ -57,6 +46,86 @@ namespace CoordinateFiltering
             }
 
             return providers;
+        }
+
+        private static void TestFindNearestNProvidersNaive(IList<Customer> customers, IList<Provider> providers)
+        {
+            var output = new StreamWriter(File.OpenWrite(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TEMP\\CoordinateFiltering\\Naive.txt")));
+            output.WriteLine("customer|provider|distance");
+            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+
+            // Naive method
+            timer.Start();
+            foreach (var customer in customers)
+            {
+                var nearestProviders = FindNearestNProviders.Naive(customer, providers, 200);
+                foreach (var provider in nearestProviders)
+                {
+                    output.WriteLine($"{customer.Id}|{provider.Value.Id}|{provider.Key}");
+                }
+            }
+            timer.Stop();
+            Console.WriteLine($"Naive method: {timer.Elapsed}");
+        }
+
+        private static void TestFindNearestNProvidersNaiveParallel(IList<Customer> customers, IList<Provider> providers)
+        {
+            var nearestProviders = new ConcurrentDictionary<int, IList<KeyValuePair<double, Provider>>>();
+            var output = new StreamWriter(File.OpenWrite(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TEMP\\CoordinateFiltering\\NaiveParallel.txt")));
+            output.WriteLine("customer|provider|distance");
+            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+
+            // Naive method, multithreaded
+            timer.Start();
+            Parallel.ForEach(customers, (customer) =>
+            {
+                nearestProviders.TryAdd(customer.Id, FindNearestNProviders.Naive(customer, providers, 200));
+            });
+            var nearestProvidersList = nearestProviders.OrderBy(item => item.Key).ToList();
+            foreach (var customer in nearestProvidersList)
+            {
+                var customerId = customer.Key;
+                foreach (var provider in customer.Value)
+                {
+                    output.WriteLine($"{customerId}|{provider.Value.Id}|{provider.Key}");
+                }
+            }
+            timer.Stop();
+            Console.WriteLine($"Naive method, Parallel.ForEach: {timer.Elapsed}");
+        }
+
+        private static void TestFindNearestNProvidersKdTree(IList<Customer> customers, IList<Provider> providers)
+        {
+            var output = new StreamWriter(File.OpenWrite(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TEMP\\CoordinateFiltering\\KdTree.txt")));
+            output.WriteLine("customer|provider|distance");
+            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+
+            // Kd-Tree method
+            // * Build tree
+            timer.Start();
+            KdTree.KdTree<double, Provider> providersTree = new KdTree.KdTree<double, Provider>(3, new KdTree.Math.DoubleMath());
+            foreach (var provider in providers)
+            {
+                providersTree.Add(new double[] { provider.Location.X, provider.Location.Y, provider.Location.Z }, provider);
+            }
+            timer.Stop();
+            var kdTimer = timer.Elapsed;
+            Console.WriteLine($"Kd-Tree build time: {kdTimer}");
+
+            // * Find providers
+            timer.Reset();
+            timer.Start();
+            foreach (var customer in customers)
+            {
+                var nearestProviders = providersTree.GetNearestNeighbours(new double[] { customer.Location.X, customer.Location.Y, customer.Location.Z }, 200);
+                foreach (var provider in nearestProviders)
+                {
+
+                    output.WriteLine($"{customer.Id}|{provider.Value.Id}|{FindNearestNProviders.Distance(customer.Location, provider.Value.Location)}");
+                }
+            }
+            timer.Stop();
+            Console.WriteLine($"Kd-Tree Method: {timer.Elapsed}");
         }
     }
 }
