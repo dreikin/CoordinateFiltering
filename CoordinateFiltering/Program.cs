@@ -65,6 +65,7 @@ namespace CoordinateFiltering
                 }
             }
             timer.Stop();
+            output.Close();
             Console.WriteLine($"Naive method: {timer.Elapsed}");
         }
 
@@ -91,6 +92,7 @@ namespace CoordinateFiltering
                 }
             }
             timer.Stop();
+            output.Close();
             Console.WriteLine($"Naive method, Parallel.ForEach: {timer.Elapsed}");
         }
 
@@ -125,6 +127,7 @@ namespace CoordinateFiltering
                 }
             }
             timer.Stop();
+            output.Close();
             Console.WriteLine($"Kd-Tree Method: {timer.Elapsed}");
         }
     }
