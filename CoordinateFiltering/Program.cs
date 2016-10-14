@@ -12,7 +12,7 @@ namespace CoordinateFiltering
         {
             Random randomSource = new Random();
             IList<Customer> customers = GenerateCustomers(40000, randomSource);
-            IDictionary<string, Provider> providers = GenerateProviders(922000, randomSource);
+            IList<Provider> providers = GenerateProviders(922000, randomSource);
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
             timer.Start();
@@ -27,7 +27,7 @@ namespace CoordinateFiltering
 
         }
 
-        private static IList<Provider> FindNearestNProviders(Customer customer, IDictionary<string, Provider> providers, int count)
+        private static IList<Provider> FindNearestNProviders(Customer customer, IList<Provider> providers, int count)
         {
             IList<Provider> nearbyProviders = new List<Provider>(count * 2);
 
@@ -48,14 +48,12 @@ namespace CoordinateFiltering
             return customers;
         }
 
-        private static IDictionary<string, Provider> GenerateProviders(int count, Random randomSource, int geohashPrecision = 9)
+        private static IList<Provider> GenerateProviders(int count, Random randomSource, int geohashPrecision = 9)
         {
-            IDictionary<string, Provider> providers = new Dictionary<string, Provider>();
-            Provider provider;
+            IList<Provider> providers = new List<Provider>();
             for (int i = 0; i < count; i++)
             {
-                provider = new Provider(i, new Location(randomSource.NextDouble() * 180 - 90, randomSource.NextDouble() * 360 - 180));
-                providers.Add(NGeoHash.Portable.GeoHash.Encode(provider.Location.Latitude, provider.Location.Longitude, geohashPrecision), provider);
+                providers.Add(new Provider(i, new Location(randomSource.NextDouble() * 180 - 90, randomSource.NextDouble() * 360 - 180)));
             }
 
             return providers;

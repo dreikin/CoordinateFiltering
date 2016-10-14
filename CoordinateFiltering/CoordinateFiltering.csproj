@@ -33,8 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NGeoHash.Portable, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\NGeoHash.Portable.1.0.0\lib\portable-net45+win+wpa81+wp80+monotouch+monoandroid+Xamarin.iOS\NGeoHash.Portable.dll</HintPath>
+    <Reference Include="KdTreeLib, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\KdTree.1.3.0\lib\net45\KdTreeLib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
