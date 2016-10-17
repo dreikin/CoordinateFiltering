@@ -18,8 +18,9 @@ namespace CoordinateFiltering
 
             // Add or remove comments in accordance with what you want to test.
             //TestFindNearestNProvidersNaive(customers, providers);
-            TestFindNearestNProvidersNaiveParallel(customers, providers);
+            //TestFindNearestNProvidersNaiveParallel(customers, providers);
             TestFindNearestNProvidersKdTree(customers, providers);
+            TestFindNearestNProvidersKdTreeParallel(customers, providers);
 
             Console.ReadLine();
             return;
@@ -105,11 +106,7 @@ namespace CoordinateFiltering
             // Kd-Tree method
             // * Build tree
             timer.Start();
-            KdTree.KdTree<double, Provider> providersTree = new KdTree.KdTree<double, Provider>(3, new KdTree.Math.DoubleMath());
-            foreach (var provider in providers)
-            {
-                providersTree.Add(new double[] { provider.Location.X, provider.Location.Y, provider.Location.Z }, provider);
-            }
+            KdTree.KdTree<double, Provider> providersTree = BuildProviderTree(providers);
             timer.Stop();
             var kdTimer = timer.Elapsed;
             Console.WriteLine($"Kd-Tree build time: {kdTimer}");
@@ -122,13 +119,67 @@ namespace CoordinateFiltering
                 var nearestProviders = providersTree.GetNearestNeighbours(new double[] { customer.Location.X, customer.Location.Y, customer.Location.Z }, 200);
                 foreach (var provider in nearestProviders)
                 {
-
-                    output.WriteLine($"{customer.Id}|{provider.Value.Id}|{FindNearestNProviders.Distance(customer.Location, provider.Value.Location)}");
+                    var distance = FindNearestNProviders.Distance(customer.Location, provider.Value.Location);
+                    output.WriteLine($"{customer.Id}|{provider.Value.Id}|{distance}");
                 }
             }
             timer.Stop();
             output.Close();
             Console.WriteLine($"Kd-Tree Method: {timer.Elapsed}");
+        }
+
+        private static void TestFindNearestNProvidersKdTreeParallel(IList<Customer> customers, IList<Provider> providers)
+        {
+            var nearestProvidersDictionary = new ConcurrentDictionary<int, IList<KeyValuePair<double, Provider>>>();
+            var output = new StreamWriter(File.OpenWrite(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "TEMP\\CoordinateFiltering\\KdTreeParallel.txt")));
+            output.WriteLine("customer|provider|distance");
+            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+
+            // Kd-Tree method
+            // * Build tree
+            timer.Start();
+            KdTree.KdTree<double, Provider> providersTree = BuildProviderTree(providers);
+            timer.Stop();
+            var kdTimer = timer.Elapsed;
+            Console.WriteLine($"Kd-Tree build time: {kdTimer}");
+
+            // * Find providers
+            timer.Reset();
+            timer.Start();
+            Parallel.ForEach(customers, (customer) =>
+            {
+                var nearestProviders = providersTree.GetNearestNeighbours(new double[] { customer.Location.X, customer.Location.Y, customer.Location.Z }, 200);
+                var nearestProvidersListLocal = new List<KeyValuePair<double, Provider>>();
+                foreach (var provider in nearestProviders)
+                {
+                    nearestProvidersListLocal.Add(new KeyValuePair<double, Provider>(FindNearestNProviders.Distance(customer.Location, provider.Value.Location), provider.Value));
+                }
+                nearestProvidersDictionary.TryAdd(customer.Id, nearestProvidersListLocal);
+            });
+            // * Sort dictionary and return as list.
+            var nearestProvidersList = nearestProvidersDictionary.OrderBy(item => item.Key).ToList();
+            // * Out put all the lines.
+            foreach (var customer in nearestProvidersList)
+            {
+                var customerId = customer.Key;
+                foreach (var provider in customer.Value)
+                {
+                    output.WriteLine($"{customerId}|{provider.Value.Id}|{provider.Key}");
+                }
+            }
+            timer.Stop();
+            output.Close();
+            Console.WriteLine($"Kd-Tree, Parallel.ForEach Method: {timer.Elapsed}");
+        }
+
+        static KdTree.KdTree<double, Provider> BuildProviderTree(IList<Provider> providers)
+        {
+            KdTree.KdTree<double, Provider> providersTree = new KdTree.KdTree<double, Provider>(3, new KdTree.Math.DoubleMath());
+            foreach (var provider in providers)
+            {
+                providersTree.Add(new double[] { provider.Location.X, provider.Location.Y, provider.Location.Z }, provider);
+            }
+            return providersTree;
         }
     }
 }
