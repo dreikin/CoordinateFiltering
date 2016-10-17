@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CoordinateFiltering
 {
-    class Customer
+    class Customer : IComparable<Customer>
     {
         public int Id { get; }
         public Location Location { get; }
@@ -15,6 +15,11 @@ namespace CoordinateFiltering
         {
             Id = id;
             Location = location;
+        }
+
+        public int CompareTo(Customer obj)
+        {
+            return Id.CompareTo(obj.Id);
         }
     }
 }

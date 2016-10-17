@@ -25,6 +25,8 @@ namespace CoordinateFiltering
         public double Y { get; }
         public double Z { get; }
 
+        public double[] Cartesian => new double[] { X, Y, Z };
+
         public Location(double latitude, double longitude)
         {
             if (latitude >= -90 && latitude <= 90) { Latitude = latitude; } else { throw new ArgumentOutOfRangeException(); }
