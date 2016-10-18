@@ -28,6 +28,7 @@ namespace CoordinateFiltering
             return providersTree;
         }
 
+        // Naive, K Nearest Neighbors
         public static IList<KeyValuePair<double, Provider>> KNearestNaive(Customer customer, IList<Provider> providers, int count)
         {
             IDictionary<double, Provider> sortedProviders = new SortedDictionary<double, Provider>();
@@ -73,6 +74,7 @@ namespace CoordinateFiltering
             return new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>(nearestProviders);
         }
 
+        // k-d Tree, K Nearest Neighbors, Simple
         public static IList<KeyValuePair<double, Provider>> KdTree(Customer customer, Accord.Collections.KDTree<Provider> providers, int count)
         {
             var nearestProviders = providers.Nearest(customer.Location.Cartesian, count);
@@ -107,12 +109,29 @@ namespace CoordinateFiltering
             return new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>(nearestProviders);
         }
 
+        // k-d Tree, All Within Radius, Simple
         public static IList<KeyValuePair<double, Provider>> KdTree(Customer customer, Accord.Collections.KDTree<Provider> providers, double radius)
         {
             var nearestProviders = providers.Nearest(customer.Location.Cartesian, radius);
             var nearestProvidersList = new List<KeyValuePair<double, Provider>>();
             foreach (var provider in nearestProviders)
             {
+                nearestProvidersList.Add(new KeyValuePair<double, Provider>(provider.Distance, provider.Node.Value));
+            }
+
+            return nearestProvidersList;
+        }
+
+        public static IList<KeyValuePair<double, Provider>> KdTree(Customer customer, Accord.Collections.KDTree<Provider> providers, double radius, int maxCount)
+        {
+            var nearestProviders = providers.Nearest(customer.Location.Cartesian, radius, maxCount);
+            var nearestProvidersList = new List<KeyValuePair<double, Provider>>();
+            if (nearestProviders.Count == 0) { return nearestProvidersList; }
+            foreach (var provider in nearestProviders)
+            {
+                // Bug in Accord.NET means the foreach throws a null reference exception if collection isn't completely full,
+                // so return early in that case.
+                if (provider.Node == null) { break; }
                 nearestProvidersList.Add(new KeyValuePair<double, Provider>(provider.Distance, provider.Node.Value));
             }
 
@@ -136,6 +155,80 @@ namespace CoordinateFiltering
             Parallel.ForEach(customers, (customer) =>
             {
                 nearestProviders.TryAdd(customer, KdTree(customer, providers, radius));
+            });
+
+            return new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>(nearestProviders);
+        }
+
+        // k-d Tree, K Nearest Neighbors, Discriminated
+        public static IList<KeyValuePair<double, Provider>> KdTree(Customer customer, ProviderTreeSet providers, int chainCount, int retailCount, int otherCount)
+        {
+            var customerProviders = new List<KeyValuePair<double, Provider>>();
+            foreach (var chain in providers.Chains)
+            {
+                customerProviders.AddRange(KdTree(customer, chain.Value, 1));
+            }
+            customerProviders = customerProviders.OrderBy(item => item.Key).Take(chainCount).ToList();
+            customerProviders.AddRange(KdTree(customer, providers.Retail, retailCount));
+            customerProviders.AddRange(KdTree(customer, providers.Other, otherCount));
+
+            return customerProviders.OrderBy(item => item.Key).ToList();
+        }
+
+        public static SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>> KdTree(IList<Customer> customers, ProviderTreeSet providers, int chainCount, int retailCount, int otherCount)
+        {
+            var nearestProviders = new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>();
+            foreach (var customer in customers)
+            {
+                nearestProviders.Add(customer, KdTree(customer, providers, chainCount, retailCount, otherCount));
+            }
+
+            return nearestProviders;
+        }
+
+        public static SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>> KdTreeParallel(IList<Customer> customers, ProviderTreeSet providers, int chainCount, int retailCount, int otherCount)
+        {
+            var nearestProviders = new ConcurrentDictionary<Customer, IList<KeyValuePair<double, Provider>>>();
+            Parallel.ForEach(customers, (customer) =>
+            {
+                nearestProviders.TryAdd(customer, KdTree(customer, providers, chainCount, retailCount, otherCount));
+            });
+
+            return new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>(nearestProviders);
+        }
+
+        // k-d Tree, All Within Radius, Discriminated
+        public static IList<KeyValuePair<double, Provider>> KdTree(Customer customer, ProviderTreeSet providers, int chainCount, int retailCount, int otherCount, double radius)
+        {
+            var customerProviders = new List<KeyValuePair<double, Provider>>();
+            foreach (var chain in providers.Chains)
+            {
+                customerProviders.AddRange(KdTree(customer, chain.Value, radius, 1));
+            }
+            customerProviders = customerProviders.OrderBy(item => item.Key).Take(chainCount).ToList();
+            customerProviders.AddRange(KdTree(customer, providers.Retail, radius, retailCount));
+            customerProviders.AddRange(KdTree(customer, providers.Other, radius, otherCount));
+
+            return customerProviders.OrderBy(item => item.Key).ToList();
+        }
+
+        public static SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>> KdTree(IList<Customer> customers, ProviderTreeSet providers, int chainCount, int retailCount, int otherCount, double radius)
+        {
+            var nearestProviders = new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>();
+            foreach (var customer in customers)
+            {
+                nearestProviders.Add(customer, KdTree(customer, providers, chainCount, retailCount, otherCount, radius));
+            }
+
+            return nearestProviders;
+        }
+
+        public static SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>> KdTreeParallel(IList<Customer> customers, ProviderTreeSet providers, int chainCount, int retailCount, int otherCount, double radius)
+        {
+            var nearestProviders = new ConcurrentDictionary<Customer, IList<KeyValuePair<double, Provider>>>();
+            Parallel.ForEach(customers, (customer) =>
+            {
+                nearestProviders.TryAdd(customer, KdTree(customer, providers, chainCount, retailCount, otherCount, radius));
             });
 
             return new SortedDictionary<Customer, IList<KeyValuePair<double, Provider>>>(nearestProviders);

@@ -107,6 +107,8 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Provider.cs" />
+    <Compile Include="ProviderSet.cs" />
+    <Compile Include="ProviderTreeSet.cs" />
     <Compile Include="Tests.cs" />
   </ItemGroup>
   <ItemGroup>
