@@ -41,7 +41,7 @@ namespace CoordinateFiltering
             return new TestData(timer.Elapsed, nearestProviders);
         }
 
-        public static TestData FindNearestNProvidersKdTree(IList<Customer> customers, KdTree.KdTree<double, Provider> providers, int count)
+        public static TestData FindNearestNProvidersKdTree(IList<Customer> customers, Accord.Collections.KDTree<Provider> providers, int count)
         {
             // Kd-Tree method
             // * Build tree
@@ -59,7 +59,7 @@ namespace CoordinateFiltering
             return new TestData(timer.Elapsed, nearestProviders);
         }
 
-        public static TestData FindNearestNProvidersKdTreeParallel(IList<Customer> customers, KdTree.KdTree<double, Provider> providers, int count)
+        public static TestData FindNearestNProvidersKdTreeParallel(IList<Customer> customers, Accord.Collections.KDTree<Provider> providers, int count)
         {
             // Kd-Tree method
             // * Build tree

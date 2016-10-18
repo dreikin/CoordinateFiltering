@@ -107,7 +107,7 @@ namespace CoordinateFiltering
 
         private static void RunDataTests(IList<Customer> customers, IList<Provider> providers, IDictionary<string, string> outputPaths, string dataType)
         {
-            KdTree.KdTree<double, Provider> providersTree = FindNearestProviders.CartesianProviderKdTreeFromList(providers);
+            Accord.Collections.KDTree<Provider> providersTree = FindNearestProviders.CartesianProviderKdTreeFromList(providers);
             Tests.TestData result;
 
             // Comment blocks in accordance with what you want to test.
