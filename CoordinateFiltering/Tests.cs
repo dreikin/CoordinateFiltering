@@ -43,14 +43,6 @@ namespace CoordinateFiltering
 
         public static TestData FindNearestNProvidersKdTree(IList<Customer> customers, Accord.Collections.KDTree<Provider> providers, int count)
         {
-            // Kd-Tree method
-            // * Build tree
-            //timer.Start();
-            //KdTree.KdTree<double, Provider> providersTree = BuildProviderTree(providers);
-            //timer.Stop();
-            //var kdTimer = timer.Elapsed;
-            //Console.WriteLine($"Kd-Tree build time: {kdTimer}");
-
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
             timer.Start();
             var nearestProviders = FindNearestProviders.KdTree(customers, providers, count);
@@ -61,19 +53,31 @@ namespace CoordinateFiltering
 
         public static TestData FindNearestNProvidersKdTreeParallel(IList<Customer> customers, Accord.Collections.KDTree<Provider> providers, int count)
         {
-            // Kd-Tree method
-            // * Build tree
-            //timer.Start();
-            //KdTree.KdTree<double, Provider> providersTree = BuildProviderTree(providers);
-            //timer.Stop();
-            //var kdTimer = timer.Elapsed;
-            //Console.WriteLine($"Kd-Tree build time: {kdTimer}");
-            
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
             timer.Start();
             var nearestProviders = FindNearestProviders.KdTreeParallel(customers, providers, count);
             timer.Stop();
             
+            return new TestData(timer.Elapsed, nearestProviders);
+        }
+
+        internal static TestData FindProvidersWithinRadiusKdTree(IList<Customer> customers, Accord.Collections.KDTree<Provider> providers, double radius)
+        {
+            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+            timer.Start();
+            var nearestProviders = FindNearestProviders.KdTree(customers, providers, radius);
+            timer.Stop();
+
+            return new TestData(timer.Elapsed, nearestProviders);
+        }
+
+        internal static TestData FindProvidersWithinRadiusKdTreeParallel(IList<Customer> customers, Accord.Collections.KDTree<Provider> providers, double radius)
+        {
+            System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+            timer.Start();
+            var nearestProviders = FindNearestProviders.KdTreeParallel(customers, providers, radius);
+            timer.Stop();
+
             return new TestData(timer.Elapsed, nearestProviders);
         }
     }
