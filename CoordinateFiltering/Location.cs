@@ -26,6 +26,7 @@ namespace CoordinateFiltering
         public double Z { get; }
 
         public double[] Cartesian => new double[] { X, Y, Z };
+        public float[] Geographic => new float[] { (float)Latitude, (float)Longitude };
 
         public Location(double latitude, double longitude)
         {

@@ -28,6 +28,16 @@ namespace CoordinateFiltering
             return providersTree;
         }
 
+        public static KdTree.KdTree<float, Provider> GeoProviderKdTreeFromList(IList<Provider> providers)
+        {
+            KdTree.KdTree<float, Provider> providersTree = new KdTree.KdTree<float, Provider>(2, new KdTree.Math.GeoMath());
+            foreach (var provider in providers)
+            {
+                providersTree.Add(new float[] { (float)provider.Location.Latitude, (float)provider.Location.Longitude }, provider);
+            }
+            return providersTree;
+        }
+
         public static IList<KeyValuePair<double, Provider>> Naive(Customer customer, IList<Provider> providers, int count)
         {
             IDictionary<double, Provider> sortedProviders = new SortedDictionary<double, Provider>();
